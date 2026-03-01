@@ -1,29 +1,19 @@
-        # example-lms-client
+# example-lms-client
 
-        example-lms-client project
+This repository contains the Laravel demo LMS client for the SCORM Engine stack.
 
-        ## Repository Automation
+## App path
 
-        This repository was bootstrapped from a GitHub template with local setup.
+`lms-laravel/`
 
-        ## Enabled Workflows
+## Quick run
 
-        - Changelog generation
-- PR auto-labeling
-- Lint checks
-- Release workflow
+```bash
+cd lms-laravel
+composer install
+php artisan key:generate
+php artisan migrate
+php artisan serve --host=0.0.0.0 --port=8000
+```
 
-        ## Configuration Snapshot
-
-        - Primary language: `generic`
-        - Semantic-release: Enabled (default bump: auto)
-
-        ## Labels
-
-        - `bug`
-- `enhancement`
-- `documentation`
-
-        ## Source Repository
-
-        git@github.com:Evangelos-Komnis-Thesis-ICT-IHU-2025/example-lms-client.git
+Then open `http://localhost:8000`.

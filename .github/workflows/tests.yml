@@ -1,0 +1,64 @@
+name: LMS Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lms-tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Laravel Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout LMS repo
+        uses: actions/checkout@v4
+
+      - name: Checkout SDK repo (path dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.SCORM_SDK_REPOSITORY || format('{0}/scorm-engine-php-sdk', github.repository_owner) }}
+          path: _sdk
+
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, sqlite3, pdo_sqlite
+          tools: composer:v2
+
+      - name: Prepare SDK path dependency
+        run: |
+          set -euo pipefail
+          ln -sfn "${GITHUB_WORKSPACE}/_sdk" "${GITHUB_WORKSPACE}/../scorm-engine-php-sdk"
+
+      - name: Install dependencies
+        working-directory: lms-laravel
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        working-directory: lms-laravel
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=file/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=file/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          touch database/database.sqlite
+          php artisan key:generate --force --ansi
+          php artisan migrate --force --ansi
+
+      - name: Run tests
+        working-directory: lms-laravel
+        run: php artisan test --ansi
